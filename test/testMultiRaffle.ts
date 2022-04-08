@@ -174,6 +174,18 @@ describe("Raffle NFT", () => {
                 mintCost,
                 availableSupply,
                 maxPerAddress                
+        it("Enter Raffle", async () => {
+
+            const [user1] = await ethers.getSigners()
+
+            const mintCost: number = 1
+            const availableSupply: number = 10
+            const maxPerAddress: number = 1
+
+            const { raffleDeploy } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
             )
 
             await ethers.provider.send("evm_increaseTime",
@@ -181,12 +193,129 @@ describe("Raffle NFT", () => {
                 [60 * 60 * 6] //6 horas
             )
 
-            await expect (raffleDeploy.connect(user1).enterRaffle(1)).
-            to.be.revertedWith("Incorrect payment");
+            await raffleDeploy.connect(user1).enterRaffle(1, {
+                value: BigNumber.from(1).mul(10).pow(18)
+            })
+
+            const entriesPerAddress = await raffleDeploy.entriesPerAddress(user1.address)
+
+            expect(entriesPerAddress).to.equals(1)
+
+        })
+
+    })
+
+    describe("claim Raffle", function () {
+
+        it("Raffle has not ended", async () => {
+            const [user1] = await ethers.getSigners()
+
+            const mintCost: number = 1
+            const availableSupply: number = 10
+            const maxPerAddress: number = 1
+
+            const { raffleDeploy } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+
+            await expect(raffleDeploy.connect(user1).claimRaffle([1])).
+                to.be.revertedWith("Raffle has not ended");
+
+        })
+
+        it("", async () => {
+
+            const [user1] = await ethers.getSigners()
+
+            const mintCost: number = 1
+            const availableSupply: number = 50
+            const maxPerAddress: number = 6
+
+            const { raffleDeploy } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+
+            /// ============= buy a ticket ====================
+            await ethers.provider.send("evm_increaseTime",
+                //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                [60 * 60 * 6] //6 horas
+            )
+
+            const costoMint = await raffleDeploy.MINT_COST()
+          
+            await raffleDeploy.connect(user1).enterRaffle(6, {
+                value: costoMint.mul(6)
+            })
+
+            /// Increase the time, greater than the closing date of the raffle
+            await ethers.provider.send("evm_increaseTime",
+                //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                [60 * 60 * 24 * 4] //3 dias
+            )
+
+            await raffleDeploy.connect(user1).claimRaffle([0,1,2,3])
+
+          
+
+            await raffleDeploy.setClearingEntropy()
 
         })
 
 
+        it("Raffle has not ended", async () => {
+            const [user1, user2] = await ethers.getSigners()
+
+            const mintCost: number = 1
+            const availableSupply: number = 4
+            const maxPerAddress: number = 2
+
+            const { raffleDeploy } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+
+            /// ============= buy a ticket ====================
+            await ethers.provider.send("evm_increaseTime",
+                //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                [60 * 60 * 6] //6 horas
+            )
+
+            const costoMint = await raffleDeploy.MINT_COST()
+          
+            await raffleDeploy.connect(user1).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+            await raffleDeploy.connect(user2).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+            
+         
+
+            /// Increase the time, greater than the closing date of the raffle
+            await ethers.provider.send("evm_increaseTime",
+                //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                [60 * 60 * 24 * 4] //3 dias
+            )
+
+            await raffleDeploy.connect(user1).claimRaffle([1])
+
+            const balanceNFT = await raffleDeploy.balanceOf(user1.address)
+            const nftCount = await raffleDeploy.nftCount()
+            const addressOwnerNft = await raffleDeploy.ownerOf(1)
+
+            expect(balanceNFT).to.equals(1)
+            expect(nftCount).to.equals(1)
+            expect(addressOwnerNft).to.equals(user1.address)
+
+        })
+    })
+
+    describe ("", ()=>{
 
     })
 
