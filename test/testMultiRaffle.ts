@@ -5,7 +5,7 @@ import { BigNumber } from "ethers"
 import { it } from "mocha";
 import { assert } from "console";
 
- 
+
 
 
 const duration = {
@@ -69,7 +69,7 @@ const MultiRaffleData = async (_mintCost: number, _available_supply: number, _ma
 
 describe("Raffle NFT", () => {
 
- 
+
 
     describe("Initial State", function () {
 
@@ -109,8 +109,8 @@ describe("Raffle NFT", () => {
                 maxPerAddress
             )
 
-            await expect (raffleDeploy.connect(user1).enterRaffle(1)).
-            to.be.revertedWith("Raffle not active");
+            await expect(raffleDeploy.connect(user1).enterRaffle(1)).
+                to.be.revertedWith("Raffle not active");
 
         })
 
@@ -125,7 +125,7 @@ describe("Raffle NFT", () => {
             const { raffleDeploy } = await MultiRaffleData(
                 mintCost,
                 availableSupply,
-                maxPerAddress                
+                maxPerAddress
             )
 
             await ethers.provider.send("evm_increaseTime",
@@ -133,8 +133,8 @@ describe("Raffle NFT", () => {
                 [60 * 60 * 24 * 2] //2 dias
             )
 
-            await expect (raffleDeploy.connect(user1).enterRaffle(1)).
-            to.be.revertedWith("Raffle ended");
+            await expect(raffleDeploy.connect(user1).enterRaffle(1)).
+                to.be.revertedWith("Raffle ended");
 
         })
 
@@ -149,7 +149,7 @@ describe("Raffle NFT", () => {
             const { raffleDeploy } = await MultiRaffleData(
                 mintCost,
                 availableSupply,
-                maxPerAddress                
+                maxPerAddress
             )
 
             await ethers.provider.send("evm_increaseTime",
@@ -157,8 +157,9 @@ describe("Raffle NFT", () => {
                 [60 * 60 * 6] //6 horas
             )
 
-            await expect (raffleDeploy.connect(user1).enterRaffle(2)).
-            to.be.revertedWith("Max mints for address reached");
+            // max tickets to acquire = 1
+            await expect(raffleDeploy.connect(user1).enterRaffle(2)).
+                to.be.revertedWith("Max mints for address reached");
 
         })
 
@@ -173,7 +174,19 @@ describe("Raffle NFT", () => {
             const { raffleDeploy } = await MultiRaffleData(
                 mintCost,
                 availableSupply,
-                maxPerAddress                
+                maxPerAddress
+            )
+
+            await ethers.provider.send("evm_increaseTime",
+                //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                [60 * 60 * 6] //6 horas
+            )
+
+            await expect(raffleDeploy.connect(user1).enterRaffle(1)).
+                to.be.revertedWith("Incorrect payment");
+
+        })
+
         it("Enter Raffle", async () => {
 
             const [user1] = await ethers.getSigners()
