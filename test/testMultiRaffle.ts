@@ -1,9 +1,9 @@
+
 import { ethers } from "hardhat"
 const hre = require("hardhat");
 import { expect } from "chai"
 import { BigNumber } from "ethers"
-import { it } from "mocha";
-import { assert } from "console";
+import { abi } from "../abi/link.json"
 
 
 
@@ -24,6 +24,25 @@ async function latest() {
     const timestampBefore: BigNumber = BigNumber.from(blockBefore.timestamp);
     return (timestampBefore);
 }
+
+
+const SendLink = async (_addressTo : string, _value : number) => {
+
+    const holderLink = "0x01BE23585060835E02B77ef475b0Cc51aA1e0709";
+    
+    await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: ["0x364d6D0333432C3Ac016Ca832fb8594A8cE43Ca6"],
+      });
+
+    const signer = await ethers.getSigner("0x364d6D0333432C3Ac016Ca832fb8594A8cE43Ca6")
+
+    var contrato  = await ethers.getContractAt(abi, holderLink);
+
+    await contrato.connect(holderLink).approve(_addressTo, _value)
+
+}
+
 
 
 const MultiRaffleData = async (_mintCost: number, _available_supply: number, _max_per_address: number) => {
@@ -272,7 +291,7 @@ describe("Raffle NFT", () => {
 
             await raffleDeploy.connect(user1).claimRaffle([0,1,2,3])
 
-          
+            await SendLink(raffleDeploy.address, costoMint.mul(6))
 
             await raffleDeploy.setClearingEntropy()
 
