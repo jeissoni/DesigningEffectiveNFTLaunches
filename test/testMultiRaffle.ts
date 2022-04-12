@@ -32,19 +32,19 @@ async function latest() {
 
 
 const SendLink = async (_addressTo : string, _value : number) => {
-
-    const holderLink = "0x01BE23585060835E02B77ef475b0Cc51aA1e0709";
     
     await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
-        params: ["0x364d6D0333432C3Ac016Ca832fb8594A8cE43Ca6"],
+        params: [link_holder],
       });
 
-    const signer = await ethers.getSigner("0x364d6D0333432C3Ac016Ca832fb8594A8cE43Ca6")
+    const signer = await ethers.getSigner(link_holder)
 
-    var contrato  = await ethers.getContractAt(abi, holderLink);
+    const signeRaffle = await ethers.getSigner(_addressTo)
 
-    await contrato.connect(holderLink).approve(_addressTo, _value)
+    var contrato : Contract = await ethers.getContractAt(abi, link_address)    
+
+    await contrato.connect(signer).transfer(_addressTo, _value)
 
 }
 
