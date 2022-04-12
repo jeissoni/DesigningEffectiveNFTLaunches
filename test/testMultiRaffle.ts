@@ -58,9 +58,6 @@ const MultiRaffleData = async (_mintCost: number, _available_supply: number, _ma
 
     const nameNft: string = "elJetas"
     const symbol: string = "elJ"
-    const link_key_hask: string = "0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc"
-    const link_address: string = "0x01BE23585060835E02B77ef475b0Cc51aA1e0709"
-    const link_vrf_coordinator_address: string = "0x6168499c0cFfCaCD319c818142124B7A15E857ab"
 
     const mint_cost: BigNumber = BigNumber.from(_mintCost).mul(10).pow(18)
     const raffle_start_time: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
