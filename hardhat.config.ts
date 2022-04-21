@@ -1,5 +1,7 @@
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-etherscan";
+
 
 require('dotenv').config()
 
@@ -16,22 +18,26 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
 module.exports = {
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.4",
+      },
+      {
+        version: "0.4.11",        
+      },
+    ],
+  },
 
   networks:{
 
-    hardhat:{
-      forking:{
-        url: `https://rinkeby.infura.io/v3/${projeId}`
-      }
-    },
+    // hardhat:{
+    //   forking:{
+    //     url: `https://rinkeby.infura.io/v3/${projeId}`
+    //   }
+    // },
 
     rinkeby:{
       url:`https://rinkeby.infura.io/v3/${projeId}`,
