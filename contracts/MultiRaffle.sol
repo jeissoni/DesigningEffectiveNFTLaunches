@@ -182,6 +182,13 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
     /// ===================================
     /// ============ Functions ============
 
+
+    function metadatasArray()  external view returns (uint256) {
+
+        return metadatas.length;
+    }
+
+
     /// @notice Enters raffle with numTickets entries / Ingresa a la rifa con numTickets entradas
  
     /// @param numTickets Number of raffle entries / Número de participaciones en el sorteo
@@ -399,10 +406,14 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
     /// @param randomness random number from VRF
     /// @param randomness número aleatorio de VRF
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+       
+        // If auction is cleared 
+        // Si se liquida la subasta
         
-        // If auction is cleared / Si se liquida la subasta
-        // Or, if auction does not need clearing / O, si la subasta no necesita liquidación
+        // Or, if auction does not need clearing 
+        // O, si la subasta no necesita liquidación
         if (clearingEntropySet || raffleEntries.length < AVAILABLE_SUPPLY) {
+
             // Push new metadata (end index non-inclusive)
             // Insertar nuevos metadatos (índice final no inclusivo)
             metadatas.push(Metadata({
