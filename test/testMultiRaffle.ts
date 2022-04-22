@@ -4,6 +4,7 @@ const hre = require("hardhat");
 import { expect } from "chai"
 import { BigNumber, Contract } from "ethers"
 import { abiLink } from "../abi/link.json"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 // ===============  Address  =========================
 const link_key_hask: string = "0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311"
@@ -12,6 +13,9 @@ const link_address: string = "0x01BE23585060835E02B77ef475b0Cc51aA1e0709"
 const link_vrf_coordinator_address: string = "0x9A8D3f1D52a8018D4f01f04DB8845C8a58Cc6d4a"
 const owner_vrf_coordinator_address: string = "0x22f44f27a25053c9921037d6cdb5edf9c05d567d"
 const link_holder: string = "0xbc1be4cc8790b0c99cff76100e0e6d01e32c6a2c"
+
+
+
 
 
 const duration = {
@@ -49,21 +53,13 @@ async function latest() {
 // }
 
 
-const SendLink = async (_addressTo: string, _value: number) => {
+const SendLink = async (
+    _addressLink : Contract,
+    _owner : SignerWithAddress,
+    _addressTo: string,
+    _value: number) => {
 
-    // await hre.network.provider.request({
-    //     method: "hardhat_impersonateAccount",
-    //     params: [link_holder],
-    // });
-
-    const signer = await ethers.getSigner(link_holder)
-
-    // const signeRaffle = await ethers.getSigner(_addressTo)
-
-    var contrato: Contract = await ethers.getContractAt(abiLink, link_address)
-
-    await contrato.connect(signer).transfer(_addressTo, _value)
-
+    await _addressLink.connect(_owner).transfer(_addressTo, _value)
 }
 
 
@@ -73,7 +69,7 @@ const SendLink = async (_addressTo: string, _value: number) => {
 
 const MultiRaffleData = async (_mintCost: number, _available_supply: number, _max_per_address: number) => {
 
-    const [ownerRaffle] = await ethers.getSigners()
+    const [ownerRaffle, vrfCoordinator] = await ethers.getSigners()
 
     const lastBlockDate: BigNumber = await latest()
 
@@ -86,20 +82,22 @@ const MultiRaffleData = async (_mintCost: number, _available_supply: number, _ma
     const available_supply: BigNumber = BigNumber.from(_available_supply)
     const max_per_address: BigNumber = BigNumber.from(_max_per_address)
 
+   
     const vrfCoordFactory = await ethers.getContractFactory("MockVRFCoordinator");
-    const mockVrfCoordinator = await vrfCoordFactory.connect(ownerRaffle).deploy();
+    const mockVrfCoordinator : Contract = await vrfCoordFactory.connect(ownerRaffle).deploy();
 
-    const linkFactory = await ethers.getContractFactory("linkERC20")
-    const linkDeploy = await linkFactory.connect(ownerRaffle).deploy()
+    const linkFactory = await ethers.getContractFactory("LinkToken")
+    const mocklinkDeploy : Contract = await linkFactory.connect(ownerRaffle).deploy()
 
  
     const raffleFactory = await ethers.getContractFactory("MultiRaffle")
-    const raffleDeploy = await raffleFactory.connect(ownerRaffle).deploy(
+    const raffleDeploy : Contract = await raffleFactory.connect(ownerRaffle).deploy(
         nameNft,
         symbol,
         link_key_hask,
-        link_address,
-        mockVrfCoordinator.address,
+        //link_address,
+        mocklinkDeploy.address,
+        vrfCoordinator.address,
         //link_vrf_coordinator_address,
         mint_cost,
         raffle_start_time,
@@ -111,7 +109,8 @@ const MultiRaffleData = async (_mintCost: number, _available_supply: number, _ma
     return {
         ownerRaffle,
         raffleDeploy,
-        linkDeploy
+        mocklinkDeploy,
+        vrfCoordinator
     }
 
 }
@@ -290,13 +289,13 @@ describe("Raffle NFT", () => {
 
         it("", async () => {
 
-            const [user1, user2, user3] = await ethers.getSigners()
+            const [user1, user2, user3, user4] = await ethers.getSigners()
 
             const mintCost: number = 1
             const availableSupply: number = 6
-            const maxPerAddress: number = 8
+            const maxPerAddress: number = 2
 
-            const { raffleDeploy, ownerRaffle } = await MultiRaffleData(
+            const { raffleDeploy, ownerRaffle , mocklinkDeploy, vrfCoordinator } = await MultiRaffleData(
                 mintCost,
                 availableSupply,
                 maxPerAddress
@@ -310,12 +309,20 @@ describe("Raffle NFT", () => {
 
             const costoMint = await raffleDeploy.MINT_COST()
 
-            await raffleDeploy.connect(user1).enterRaffle(6, {
-                value: costoMint.mul(6)
+            await raffleDeploy.connect(user1).enterRaffle(2, {
+                value: costoMint.mul(2)
             })
 
-            await raffleDeploy.connect(user2).enterRaffle(6, {
-                value: costoMint.mul(6)
+            await raffleDeploy.connect(user2).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+
+            await raffleDeploy.connect(user3).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+
+            await raffleDeploy.connect(user4).enterRaffle(2, {
+                value: costoMint.mul(2)
             })
 
 
@@ -325,28 +332,58 @@ describe("Raffle NFT", () => {
                 [60 * 60 * 24 * 4] //3 dias
             )
 
-            await SendLink(raffleDeploy.address, costoMint.mul(8))
-
-            const prueba = await raffleDeploy.setClearingEntropy()          
-
-            // await hre.network.provider.request({
-            //             method: "hardhat_impersonateAccount",
-            //             params: [owner_vrf_coordinator_address],
-            //         });               
+            await SendLink(
+                mocklinkDeploy,
+                ownerRaffle,
+                raffleDeploy.address, 
+                costoMint.mul(8)
+            )
             
-            // const signerVRFCoordinator = await ethers.getSigner(link_vrf_coordinator_address)
+            await raffleDeploy.setClearingEntropy()     
+            
+            await raffleDeploy.connect(vrfCoordinator).rawFulfillRandomness(
+                link_key_hask,
+                98524582 //# aleatorio :(
+            )
 
-            // await raffleDeploy.connect(signerVRFCoordinator).rawFulfillRandomness(link_key_hask, 1)
+            const antes = await raffleDeploy.getRaffleEntries()
+
+            await raffleDeploy.connect(user1).clearRaffle(6)
+            
+            const despues = await raffleDeploy.getRaffleEntries()
+
+
+            //console.log(antes)
+            //console.log(despues)
+
+            //Win by user 
+            //user1 ==> 2
+            //user2 ==> 1,4
+            //user3 ==> 3,5
+            //user4 ==> 0
+
+            //await raffleDeploy.connect(user1).claimRaffle([1])
+            //await raffleDeploy.connect(user2).claimRaffle([2])
+            await raffleDeploy.connect(user3).claimRaffle([5])
+
+            //const balnaceOwner1 = await raffleDeploy.balanceOf(user1.address)
+            //const balnaceOwner2 = await raffleDeploy.balanceOf(user2.address)
+            const balnaceOwner3 = await raffleDeploy.balanceOf(user3.address)
+
+
+            //console.log(balnaceOwner1.toString())
+            //console.log(balnaceOwner2.toString())
+            console.log(balnaceOwner3.toString())
+            
+            // expect(balnaceOwner1).to.equals(1)
+            // expect(balnaceOwner2).to.equals(5)
+            // expect(balnaceOwner3).to.equals(6)
 
 
 
-            //const otro  = await raffleDeploy.metadatasArray()
-            // const otro = await raffleDeploy.metadatas.length
+           
+     
 
-            // const mire = await raffleDeploy.clearingEntropySet()
-
-            // console.log(mire)
-            // //await raffleDeploy.connect(user1).clearRaffle(2)
 
         })
 
