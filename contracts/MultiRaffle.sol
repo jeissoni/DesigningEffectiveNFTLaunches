@@ -2,11 +2,14 @@
 pragma solidity ^0.8.0;
 
 /// ============ Imports ============
-
 import "./interfaces/IERC20.sol"; // ERC20 minified interface
 import "@openzeppelin/contracts/access/Ownable.sol"; // OZ: Ownership
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; // OZ: ERC721
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol"; // Chainlink VRF
+
+
+
+import "hardhat/console.sol";
 
 /// @title MultiRaffle / Sorte Multiple
 /// @author Anish Agnihotri
@@ -183,9 +186,12 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
     /// ============ Functions ============
 
 
-    function metadatasArray()  external view returns (uint256) {
-
+    function metadatasArray() external view returns (uint256) {
         return metadatas.length;
+    }
+
+    function getRaffleEntries() external view returns (address[] memory) {
+        return raffleEntries;
     }
 
 
@@ -290,6 +296,7 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
         // Ensure raffle has ended
         // Asegúrese de que la rifa haya terminado
         require(block.timestamp > RAFFLE_END_TIME, "Raffle has not ended");
+        
         // Ensure raffle has been cleared
         // Asegúrese de que la rifa se haya liquidado
         require(
@@ -306,6 +313,8 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
         // Mint NFT para boletos ganadores
         uint256 tmpCount = nftCount;
         for (uint256 i = 0; i < tickets.length; i++) {
+
+            // console.log(tickets[i]);
             // Ensure ticket is in range
             // Asegurarse de que el ticket esté dentro del rango
             require(tickets[i] < raffleEntries.length, "Ticket is out of entries range");
@@ -322,9 +331,13 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
             // Alternar estado de reclamo de boleto
             ticketClaimed[tickets[i]] = true;
 
+            console.log(tickets[i] , AVAILABLE_SUPPLY);
+
             // If ticket is a winner
             // si la boleta es ganadora 
             if (tickets[i] + 1 <= AVAILABLE_SUPPLY) {
+
+                
                 
                 // Mint NFT to caller
                 // Mint NFT a la persona que llama
@@ -406,7 +419,6 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
     /// @param randomness random number from VRF
     /// @param randomness número aleatorio de VRF
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-       
         // If auction is cleared 
         // Si se liquida la subasta
         
@@ -427,9 +439,11 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
             return;
         }
 
-        // Else, set entropy / Si no, establece la entropía
+        // Else, set entropy 
+        // Si no, establece la entropía
         entropy = randomness;
-        // Update entropy set status / Actualizar el estado del conjunto de entropía
+        // Update entropy set status 
+        // Actualizar el estado del conjunto de entropía
         clearingEntropySet = true;
     }
 
