@@ -244,7 +244,7 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
         require(block.timestamp > RAFFLE_END_TIME, "Raffle has not ended");
 
         // Ensure raffle requires clearing (entries !< supply)
-        // Asegúrese de que la rifa requiera compensación (entradas! <suministro)
+        // Asegúrese de que la rifa requiera compensación (entradas !< suministro)
         require(raffleEntries.length > AVAILABLE_SUPPLY, "Raffle does not need clearing");
 
         // Ensure raffle requires clearing (already cleared)
@@ -256,7 +256,7 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
         require(numShuffles <= AVAILABLE_SUPPLY - shuffledCount, "Excess indices to shuffle");
 
         // Ensure clearing entropy for shuffle randomness is set
-        // Asegúrese de que la entropía de limpieza para la aleatoriedad aleatoria esté configurada
+        // Asegúrese de que la entropía de limpieza para la aleatoriedad esté configurada
         require(clearingEntropySet, "No entropy to clear raffle");
 
         // Run Fisher-Yates shuffle for AVAILABLE_SUPPLY
@@ -314,7 +314,8 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
         uint256 tmpCount = nftCount;
         for (uint256 i = 0; i < tickets.length; i++) {
 
-            // console.log(tickets[i]);
+            // console.log(raffleEntries[tickets[i]]);
+            // console.log("quien llama ", msg.sender);
             // Ensure ticket is in range
             // Asegurarse de que el ticket esté dentro del rango
             require(tickets[i] < raffleEntries.length, "Ticket is out of entries range");
@@ -331,13 +332,11 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
             // Alternar estado de reclamo de boleto
             ticketClaimed[tickets[i]] = true;
 
-            console.log(tickets[i] , AVAILABLE_SUPPLY);
+            //console.log(tickets[i] , AVAILABLE_SUPPLY);
 
             // If ticket is a winner
             // si la boleta es ganadora 
-            if (tickets[i] + 1 <= AVAILABLE_SUPPLY) {
-
-                
+            if (tickets[i] + 1 <= AVAILABLE_SUPPLY) {                
                 
                 // Mint NFT to caller
                 // Mint NFT a la persona que llama
@@ -356,7 +355,7 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
         // Reembolso de boletos perdidos
         if (winningTickets != tickets.length) {
             // Payout value equal to number of bought tickets - paid for winning tickets
-            // Valor de pago igual al número de boletos comprados - pagado por boletos ganadores
+            // Valor de pago igual al número de boletos comprados - pago por boletos ganadores
             (bool sent, ) = payable(msg.sender).call{
                 value: (tickets.length - winningTickets) * MINT_COST
             }("");
