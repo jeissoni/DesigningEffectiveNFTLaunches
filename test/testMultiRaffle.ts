@@ -360,21 +360,21 @@ describe("Raffle NFT", () => {
 
    
             /*
-            user1 -- 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-            user2 -- 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-            user3 -- 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-            user4 -- 0x90F79bf6EB2c4f870365E785982E1f101E93b906
+            user1 -- 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+            user2 -- 0x90F79bf6EB2c4f870365E785982E1f101E93b906
+            user3 -- 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+            user4 -- 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc
              */
             
             /* Win by user 
-            0 -'0x90F79bf6EB2c4f870365E785982E1f101E93b906',-- user4-- -ok
-            1 -'0x70997970C51812dc3A010C7d01b50e0d17dc79C8',-- user2-- -ok
-            2 -'0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',-- user1-- -ok
-            3 -'0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',-- user3-- -ok
-            4 -'0x70997970C51812dc3A010C7d01b50e0d17dc79C8',-- user2-- -ok
-            5 -'0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',-- user3-- -ok
-            6 -'0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',-- user1-- -X
-            7 -'0x90F79bf6EB2c4f870365E785982E1f101E93b906' -- user4-- -X
+            0 -'',-- user4-- -ok
+            1 -'',-- user2-- -ok
+            2 -'',-- user1-- -ok
+            3 -'',-- user3-- -ok
+            4 -'',-- user2-- -ok
+            5 -'',-- user3-- -ok
+            6 -'',-- user1-- -X
+            7 -'' -- user4-- -X
             */
            
 
@@ -409,7 +409,8 @@ describe("Raffle NFT", () => {
                 ownerRaffle, 
                 mocklinkDeploy, 
                 vrfCoordinator,
-                user1, user2, user3, user4 } = await MultiRaffleData(
+                user1, user2, user3, user4 
+            } = await MultiRaffleData(
                 mintCost,
                 availableSupply,
                 maxPerAddress
@@ -607,15 +608,127 @@ describe("Raffle NFT", () => {
 
             const balanceOwnerAfter : BigNumber = await ethers.provider.getBalance(ownerRaffle.address)
 
-
             expect(balanceOwnerAfter).to.equals(balanceOwnerBefore.add(costoMint.mul(availableSupply)).sub(gasCostUser1))
-
-
-          
-
+         
         })
 
+    })
 
+    describe("token uri", ()=>{
+
+        it("" , async () => {
+            const mintCost: number = 1
+            const availableSupply: number = 6
+            const maxPerAddress: number = 2
+
+            const { 
+                raffleDeploy,
+                ownerRaffle, 
+                mocklinkDeploy, 
+                vrfCoordinator,
+                user1, user2, user3, user4 } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+          
+
+            /// ============= buy a ticket ====================
+            await ethers.provider.send("evm_increaseTime",
+                //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                [60 * 60 * 6] //6 horas
+            )
+
+            const costoMint : BigNumber = await raffleDeploy.MINT_COST()
+
+
+            await raffleDeploy.connect(user1).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+
+            await raffleDeploy.connect(user2).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+
+            await raffleDeploy.connect(user3).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+
+            await raffleDeploy.connect(user4).enterRaffle(2, {
+                value: costoMint.mul(2)
+            })
+          
+
+            /// Increase the time, greater than the closing date of the raffle
+            await ethers.provider.send("evm_increaseTime",
+                //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                [60 * 60 * 24 * 4] //3 dias
+            )
+
+            await SendLink(
+                mocklinkDeploy,
+                ownerRaffle,
+                raffleDeploy.address, 
+                costoMint.mul(8)
+            )
+            
+            await raffleDeploy.connect(ownerRaffle).setClearingEntropy()     
+            
+            await raffleDeploy.connect(vrfCoordinator).rawFulfillRandomness(
+                link_key_hask,
+                98524582 //# aleatorio :(
+            )
+
+            await raffleDeploy.connect(ownerRaffle).clearRaffle(6)
+          
+          
+            await raffleDeploy.connect(user1).claimRaffle([2,6])
+            await raffleDeploy.connect(user2).claimRaffle([1,4])
+           
+
+            await raffleDeploy.connect(user1).revealPendingMetadata()            
+            await raffleDeploy.connect(vrfCoordinator).rawFulfillRandomness(
+                link_key_hask,
+                9888775 //# aleatorio :(
+            )
+            
+            const uriUser1 = await raffleDeploy.connect(user1).tokenURI(1)
+            const uriUser2 = await raffleDeploy.connect(user2).tokenURI(2)
+            
+
+            await raffleDeploy.connect(user3).claimRaffle([3,5])
+            await raffleDeploy.connect(user4).claimRaffle([0,7]) 
+            
+            const uriUser3 = await raffleDeploy.connect(user3).tokenURI(5)
+            const uriUser4 = await raffleDeploy.connect(user4).tokenURI(4)
+
+            console.log(uriUser3)
+            
+            /*
+            user1 -- 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+            user2 -- 0x90F79bf6EB2c4f870365E785982E1f101E93b906
+            user3 -- 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+            user4 -- 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc
+
+            1 -user1
+            2 -user2
+            3 -user2
+            4 -user3
+            5 -user3
+            6 -user4
+
+             */
+
+
+            // const tx = await raffleDeploy.connect(ownerRaffle).withdrawRaffleProceeds()
+            // const gasUsedUser: BigNumber = (await tx.wait()).gasUsed
+            // const gasPriceUser: BigNumber = tx.gasPrice
+            // var gasCostUser1: BigNumber = gasUsedUser.mul(gasPriceUser)
+
+
+            // const balanceOwnerAfter : BigNumber = await ethers.provider.getBalance(ownerRaffle.address)
+
+        })
 
     })
 

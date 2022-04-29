@@ -494,13 +494,17 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
     function tokenURI(uint256 tokenId) override public view returns (string memory) {
         uint256 randomness;
         bool metadataCleared;
-        string[3] memory parts;
+        string[3] memory parts;     
+
+        console.log(metadatas.length);
 
         for (uint256 i = 0; i < metadatas.length; i++) {
+
             if (tokenId >= metadatas[i].startIndex && tokenId < metadatas[i].endIndex) {
                 randomness = metadatas[i].entropy;
                 metadataCleared = true;
             }
+
         }
 
         parts[0] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base { fill: white; font-family: serif; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="10" y="20" class="base">';
