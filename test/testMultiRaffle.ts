@@ -614,6 +614,61 @@ describe("Raffle NFT", () => {
 
     })
 
+
+    describe("BaseURI" , ()=>{
+
+        it("Error when calling function if not owner",async () => {
+            const mintCost: number = 1
+            const availableSupply: number = 6
+            const maxPerAddress: number = 2
+
+            const { 
+                raffleDeploy,           
+                user1, user2, user3, user4 } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+
+
+            await expect(raffleDeploy.connect(user1).setBaseURI("asdvaserrerdasd")).
+            to.be.revertedWith("Ownable: caller is not the owner");
+
+            await expect(raffleDeploy.connect(user2).setBaseURI("asdvaserrerdasd")).
+            to.be.revertedWith("Ownable: caller is not the owner");
+
+            await expect(raffleDeploy.connect(user3).setBaseURI("asdvaserrerdasd")).
+            to.be.revertedWith("Ownable: caller is not the owner");
+
+            await expect(raffleDeploy.connect(user4).setBaseURI("asdvaserrerdasd")).
+            to.be.revertedWith("Ownable: caller is not the owner");
+          
+
+        })
+
+        it("Set baseURI by owner", async () => {
+            
+            const baseURI : string = "asdasdasdasdasdasd"
+            const mintCost: number = 1
+            const availableSupply: number = 6
+            const maxPerAddress: number = 2
+
+            const { 
+                raffleDeploy, ownerRaffle           
+                } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+        
+            await expect(raffleDeploy.connect(ownerRaffle).setBaseURI(baseURI))
+            .to.emit(raffleDeploy, 'SetBaseURI')
+            .withArgs(ownerRaffle.address, baseURI)
+
+
+        })
+
+    })
     describe("token uri", ()=>{
 
         it("" , async () => {
