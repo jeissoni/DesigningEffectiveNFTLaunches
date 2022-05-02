@@ -111,6 +111,8 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
     /// @notice Ticket para el estado de reclamo de rifa
     mapping(uint256 => bool) public ticketClaimed;
 
+    ///@notice string with the base for the tokenURI 
+    string private baseURI;
 
 
     /// =========================================
@@ -141,6 +143,11 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
     /// @param winningTickets Number of NFTs minted
     /// @param losingTickets Number of losing raffle tickets refunded
     event RaffleClaimed(address indexed user, uint256 winningTickets, uint256 losingTickets);
+
+    /// @notice Emitted after owner set baseURI
+    /// @param user Address of owner
+    /// @param baseURI string whit baseURI
+    event SetBaseURI(address indexed user, string baseURI);
 
     /// ============ Constructor ============
 
@@ -482,44 +489,67 @@ contract MultiRaffle is Ownable, ERC721, VRFConsumerBase {
         emit RaffleProceedsClaimed(msg.sender, proceeds);
     }
 
-
-    /// =====================================================
-    /// ============ Developer-defined functions ============
-
-    /// @notice Returns metadata about a token (depending on randomness reveal status)
-    /// @notice Devuelve metadatos sobre un token (dependiendo del estado de revelación de aleatoriedad)
-
-    /// @dev Partially implemented, returns only example string of randomness-dependent content
-    /// @dev Implementado parcialmente, devuelve solo una cadena de ejemplo de contenido dependiente de la aleatoriedad
-    function tokenURI(uint256 tokenId) override public view returns (string memory) {
-        uint256 randomness;
-        bool metadataCleared;
-        string[3] memory parts;     
-
-        console.log(metadatas.length);
-
-        for (uint256 i = 0; i < metadatas.length; i++) {
-
-            if (tokenId >= metadatas[i].startIndex && tokenId < metadatas[i].endIndex) {
-                randomness = metadatas[i].entropy;
-                metadataCleared = true;
-            }
-
-        }
-
-        parts[0] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base { fill: white; font-family: serif; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="10" y="20" class="base">';
-
-        if (metadataCleared) {
-            parts[1] = string(abi.encodePacked('Randomness: ', _toString(randomness)));
-        } else {
-            parts[1] = 'No randomness assigned';
-        }
-
-        parts[2] = '</text></svg>';
-        string memory output = string(abi.encodePacked(parts[0], parts[1], parts[2]));
-
-        return output;
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseURI;
     }
+
+    function setBaseURI(string memory _setBaseUri) external onlyOwner() {
+        baseURI = _setBaseUri;
+        emit SetBaseURI(msg.sender, _setBaseUri);
+    }
+
+    function tokenURI(uint256 tokenId) override public view returns (string memory) {
+        
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+
+        require(bytes(baseURI).length > 0, "baseURI is not defined");
+
+        string memory base = _baseURI();
+
+        return string(abi.encodePacked(base, _toString(tokenId)));
+
+    }
+
+    
+
+
+    // /// =====================================================
+    // /// ============ Developer-defined functions ============
+
+    // /// @notice Returns metadata about a token (depending on randomness reveal status)
+    // /// @notice Devuelve metadatos sobre un token (dependiendo del estado de revelación de aleatoriedad)
+
+    // /// @dev Partially implemented, returns only example string of randomness-dependent content
+    // /// @dev Implementado parcialmente, devuelve solo una cadena de ejemplo de contenido dependiente de la aleatoriedad
+    // function tokenURI(uint256 tokenId) override public view returns (string memory) {
+    //     uint256 randomness;
+    //     bool metadataCleared;
+    //     string[3] memory parts;     
+
+    //     console.log(metadatas.length);
+
+    //     for (uint256 i = 0; i < metadatas.length; i++) {
+
+    //         if (tokenId >= metadatas[i].startIndex && tokenId < metadatas[i].endIndex) {
+    //             randomness = metadatas[i].entropy;
+    //             metadataCleared = true;
+    //         }
+
+    //     }
+
+    //     parts[0] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base { fill: white; font-family: serif; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="10" y="20" class="base">';
+
+    //     if (metadataCleared) {
+    //         parts[1] = string(abi.encodePacked('Randomness: ', _toString(randomness)));
+    //     } else {
+    //         parts[1] = 'No randomness assigned';
+    //     }
+
+    //     parts[2] = '</text></svg>';
+    //     string memory output = string(abi.encodePacked(parts[0], parts[1], parts[2]));
+
+    //     return output;
+    // }
 
     /// @notice Converts a uint256 to its string representation
     /// @notice Convierte un uint256 a su representación de cadena
