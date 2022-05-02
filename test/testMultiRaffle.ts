@@ -669,6 +669,48 @@ describe("Raffle NFT", () => {
         })
 
     })
+
+    describe("new owner", ()=>{
+
+        it("Error when calling function if not owner",async () => {
+
+            const mintCost: number = 1
+            const availableSupply: number = 6
+            const maxPerAddress: number = 2
+
+            const { 
+                raffleDeploy, user1           
+                } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+
+            await expect(raffleDeploy.connect(user1).transferOwnership(user1.address)).
+            to.be.revertedWith("Ownable: caller is not the owner");         
+
+        })
+
+        it("Ownership Transferred", async () => {
+            const mintCost: number = 1
+            const availableSupply: number = 6
+            const maxPerAddress: number = 2
+
+            const { 
+                raffleDeploy, ownerRaffle,user1           
+                } = await MultiRaffleData(
+                mintCost,
+                availableSupply,
+                maxPerAddress
+            )
+
+            await expect(raffleDeploy.connect(ownerRaffle).transferOwnership(user1.address))
+            .to.emit(raffleDeploy, 'OwnershipTransferred')
+            .withArgs(ownerRaffle.address, user1.address)
+        })
+
+    })
+
     describe("token uri", ()=>{
 
         it("" , async () => {
@@ -753,6 +795,9 @@ describe("Raffle NFT", () => {
 
             await raffleDeploy.connect(user3).claimRaffle([3,5])
             await raffleDeploy.connect(user4).claimRaffle([0,7]) 
+
+
+            
             
             const uriUser3 = await raffleDeploy.connect(user3).tokenURI(5)
             const uriUser4 = await raffleDeploy.connect(user4).tokenURI(4)
